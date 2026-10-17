@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STONES JODA - CONTADOR PEDIDOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white min-h-screen p-6">
+<h1 class="text-3xl font-black text-center mb-2">STONES JODA! - PANEL PEDIDOS</h1>
+<p class="text-center text-zinc-500 mb-8">stonesjodarock-merch - Firestore</p>
+
+<!-- CONTADORES GRANDES -->
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-5xl mx-auto mb-8">
+  <div class="bg-zinc-900 border-2 border-red-600 rounded-2xl p-6 text-center">
+    <p class="text-xs text-zinc-400">TOTAL ORDENES</p>
+    <p id="totalOrdenes" class="text-6xl font-black text-yellow-400">0</p>
+    <p class="text-xs">pedidos distintos</p>
+  </div>
+  <div class="bg-zinc-900 rounded-2xl p-6 text-center">
+    <p class="text-xs text-zinc-400">TOTAL PRENDAS</p>
+    <p id="totalPrendas" class="text-6xl font-black">0</p>
+  </div>
+  <div class="bg-zinc-900 rounded-2xl p-6 text-center">
+    <p class="text-xs text-zinc-400">TOTAL $</p>
+    <p id="totalMonto" class="text-4xl font-black text-green-400">$0</p>
+  </div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">REMERAS</p><p id="cRemeras" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">GORRAS</p><p id="cGorras" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">ZAPATILLAS</p><p id="cZapas" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">BEBIDAS</p><p id="cBebidas" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">BARRILES</p><p id="cBarriles" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">WHATSAPP</p><a href="https://wa.me/5491126497125" target="_blank" class="text-xl text-green-400 font-bold">ABRIR</a></div>
+</div>
+
+<!-- LISTA DE PEDIDOS -->
+<div class="max-w-5xl mx-auto bg-zinc-900 rounded-2xl p-4">
+  <h2 class="font-bold mb-4">ULTIMOS PEDIDOS (1,2,3,4...100)</h2>
+  <div id="listaPedidos" class="space-y-2 max-h-[400px] overflow-y-auto">Cargando...</div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAeCoXsqfjZxo8VRVhZFzKo23EWmTq3Jxk",
+    authDomain: "stonesjodarock-merch.firebaseapp.com",
+    projectId: "stonesjodarock-merch",
+    storageBucket: "stonesjodarock-merch.firebasestorage.app",
+    messagingSenderId: "1008233741410",
+    appId: "1:1008233741410:web:8ff3a13279622d61ace53b"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  onSnapshot(collection(db, "pedidos"), snap => {
+    let ordenes=0, prendas=0, monto=0;
+    let cats={remeras:0, gorras:0, zapatillas:0, bebidas:0, barriles:0};
+    let html="";
+
+    // Ordenar por fecha descendente para mostrar ultimos primero
+    let docs=[];
+    snap.forEach(d=>{
+      let data=d.data();
+      if(data.producto==="prueba" || data.estampado==="prueba") return;
+      docs.push({id:d.id, ...data});
+    });
+    docs.sort((a,b)=> (b.fecha?.seconds||0)-(a.fecha?.seconds||0));
+
+    docs.forEach((data, idx)=>{
+      ordenes++;
+      prendas+= data.cantidad||0;
+      monto+= data.montoTotal||0;
+      let cat = data.categoria || "remeras";
+      if(cats[cat]!==undefined) cats[cat]+= data.cantidad||0;
+      else cats.remeras+= data.cantidad||0;
+
+      let num = docs.length - idx; // numero 1,2,3...
+      let fecha = data.fecha ? new Date(data.fecha.seconds*1000).toLocaleString('es-AR') : "ahora";
+      html+= `<div class="flex justify-between bg-black p-3 rounded border border-zinc-800 text-xs">
+        <span><b>#${num}</b> ${data.estampado} - ${data.categoria} - ${data.color} ${data.talle} x${data.cantidad}</span>
+        <span class="text-yellow-400 font-bold">$${(data.montoTotal||0).toLocaleString('es-AR')} - ${fecha}</span>
+      </div>`;
+    });
+
+    document.getElementById('totalOrdenes').textContent = ordenes;
+    document.getElementById('totalPrendas').textContent = prendas;
+    document.getElementById('totalMonto').textContent = "$"+monto.toLocaleString('es-AR');
+    document.getElementById('cRemeras').textContent = cats.remeras;
+    document.getElementById('cGorras').textContent = cats.gorras;
+    document.getElementById('cZapas').textContent = cats.zapatillas;
+    document.getElementById('cBebidas').textContent = cats.bebidas;
+    document.getElementById('cBarriles').textContent = cats.barriles;
+    document.getElementById('listaPedidos').innerHTML = html || "Aun no hay pedidos. Hace una compra de prueba en la tienda.";
+  });
+</script>
+</body>
+</html>
