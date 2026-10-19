@@ -1,1 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STONES JODA - CONTADOR PEDIDOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white min-h-screen p-6">
+<script>
+const _k = atob("am9kYTIwMjY=");
+let _t = prompt("PANEL PRIVADO STONES JODA - Ingresa clave:");
+if(_t !== _k){ document.body.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif'><h1 style='color:red;font-size:32px'>ACCESO DENEGADO</h1><a href='/' style='color:white;margin-top:20px;border:1px solid white;padding:10px 20px;border-radius:8px'>Volver</a></div>"; throw new Error("No autorizado"); }
+</script>
+<h1 class="text-3xl font-black text-center mb-2">STONES JODA! - PANEL PEDIDOS</h1>
+<p class="text-center text-zinc-500 mb-2">stonesjodarock-merch - Firestore</p>
+<p class="text-center text-zinc-600 text-xs mb-8">Panel privado | <a href="/" class="underline text-white">Tienda</a></p>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-5xl mx-auto mb-8">
+  <div class="bg-zinc-900 border-2 border-red-600 rounded-2xl p-6 text-center"><p class="text-xs text-zinc-400">TOTAL ORDENES</p><p id="totalOrdenes" class="text-6xl font-black text-yellow-400">0</p></div>
+  <div class="bg-zinc-900 rounded-2xl p-6 text-center"><p class="text-xs text-zinc-400">TOTAL PRENDAS</p><p id="totalPrendas" class="text-6xl font-black">0</p></div>
+  <div class="bg-zinc-900 rounded-2xl p-6 text-center"><p class="text-xs text-zinc-400">TOTAL $</p><p id="totalMonto" class="text-4xl font-black text-green-400">$0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">REMERAS</p><p id="cRemeras" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">GORRAS</p><p id="cGorras" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">ZAPATILLAS</p><p id="cZapas" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">BEBIDAS</p><p id="cBebidas" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">BARRILES</p><p id="cBarriles" class="text-3xl font-bold">0</p></div>
+  <div class="bg-zinc-800 rounded-xl p-4 text-center"><p class="text-xs">RECEPCION</p><a href="https://wa.me/5491126497125" target="_blank" class="text-xl text-green-400 font-bold">ABRIR</a></div>
+</div>
+<div class="max-w-5xl mx-auto bg-zinc-900 rounded-2xl p-4">
+  <div class="flex justify-between items-center mb-4"><h2 class="font-bold">ULTIMOS PEDIDOS (1,2,3,4...100)</h2><span id="ultimaAct" class="text-xs text-zinc-500"></span></div>
+  <div id="listaPedidos" class="space-y-3 max-h-[600px] overflow-y-auto">Cargando...</div>
+</div>
+<div id="modalEditar" class="fixed inset-0 bg-black/80 hidden justify-center items-center p-4 z-50">
+  <div class="bg-zinc-900 rounded-2xl p-6 w-full max-w-md border border-zinc-700">
+    <h3 class="font-black text-xl mb-4">EDITAR PEDIDO #<span id="editNum"></span></h3>
+    <input id="editEstampado" class="w-full bg-black border border-zinc-700 rounded-lg p-2 mb-2" placeholder="Estampado">
+    <div class="grid grid-cols-2 gap-2 mb-2">
+      <select id="editCategoria" class="bg-black border border-zinc-700 rounded-lg p-2"><option value="remeras">REMERAS</option><option value="gorras">GORRAS</option><option value="zapatillas">ZAPATILLAS</option><option value="bebidas">BEBIDAS</option><option value="barriles">BARRILES</option></select>
+      <select id="editColor" class="bg-black border border-zinc-700 rounded-lg p-2"><option value="Blanca">Blanca</option><option value="Negra">Negra</option><option value="Unico">Unico</option></select>
+    </div>
+    <div class="grid grid-cols-2 gap-2 mb-2">
+      <select id="editTalle" class="bg-black border border-zinc-700 rounded-lg p-2"><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>Unico</option></select>
+      <input id="editCantidad" type="number" min="1" class="bg-black border border-zinc-700 rounded-lg p-2" placeholder="Cant">
+    </div>
+    <input id="editMonto" type="number" class="w-full bg-black border border-zinc-700 rounded-lg p-2 mb-2" placeholder="Monto $">
+    <input id="editCliente" class="w-full bg-black border border-zinc-700 rounded-lg p-2 mb-2" placeholder="Nombre cliente">
+    <input id="editTelefono" class="w-full bg-black border border-zinc-700 rounded-lg p-2 mb-4" placeholder="WhatsApp cliente 5491...">
+    <div class="flex gap-2"><button id="btnGuardarEdit" class="flex-1 bg-green-600 rounded-lg p-3 font-bold">GUARDAR</button><button onclick="document.getElementById('modalEditar').classList.add('hidden')" class="flex-1 bg-zinc-700 rounded-lg p-3">CANCELAR</button></div>
+    <input type="hidden" id="editId">
+  </div>
+</div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, doc, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+  const firebaseConfig = { apiKey: "AIzaSyAeCoXsqfjZxo8VRVhZFzKo23EWmTq3Jxk", authDomain: "stonesjodarock-merch.firebaseapp.com", projectId: "stonesjodarock-merch", storageBucket: "stonesjodarock-merch.firebasestorage.app", messagingSenderId: "1008233741410", appId: "1:1008233741410:web:8ff3a13279622d61ace53b" };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  let docsCache = [];
+  onSnapshot(collection(db, "pedidos"), snap => {
+    let ordenes=0, prendas=0, monto=0;
+    let cats={remeras:0, gorras:0, zapatillas:0, bebidas:0, barriles:0};
+    let html="";
+    let docs=[];
+    snap.forEach(d=>{
+      let data=d.data();
+      if(data.producto==="prueba" || data.estampado==="prueba") return;
+      docs.push({id:d.id, ...data});
+    });
+    docs.sort((a,b)=> (b.fecha?.seconds||0)-(a.fecha?.seconds||0));
+    docsCache = docs;
+    docs.forEach((data, idx)=>{
+      ordenes++;
+      prendas+= data.cantidad||0;
+      monto+= data.montoTotal||0;
+      let cat = (data.categoria || "remeras").toLowerCase();
+      if(cats[cat]!==undefined) cats[cat]+= data.cantidad||0; else cats.remeras+= data.cantidad||0;
+      let num = docs.length - idx;
+      let fecha = data.fecha ? new Date(data.fecha.seconds*1000).toLocaleString('es-AR') : "ahora";
+      let tel = data.telefonoCliente || data.clienteTelefono || data.wa || "";
+      let nom = data.nombreCliente || data.cliente || "";
+      html += '<div class="bg-black p-3 rounded border border-zinc-800 text-xs"><div class="flex justify-between gap-2"><div class="flex-1 min-w-0"><span class="text-yellow-400 font-black">#'+num+'</span> <span class="font-bold">'+(data.estampado||'')+' - '+(data.categoria||'').toUpperCase()+' - '+(data.color||'')+' '+(data.talle||'')+' x'+(data.cantidad||0)+'</span><div class="text-zinc-400 mt-1">Cliente: '+(nom||'No cargado')+' | Tel: '+(tel||'No cargado')+' | '+fecha+'</div></div><span class="text-yellow-400 font-bold text-sm">$'+(data.montoTotal||0).toLocaleString('es-AR')+'</span></div><div class="flex flex-wrap gap-1 mt-2"><button onclick="confirmarPedido(''+data.id+'')" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded font-bold">CONFIRMAR -> CLIENTE</button><button onclick="editarPedido(''+data.id+'')" class="bg-blue-600 text-white px-3 py-1 rounded font-bold">EDITAR</button><button onclick="eliminarPedido(''+data.id+'','+num+')" class="bg-red-600 text-white px-3 py-1 rounded font-bold">ELIMINAR</button>'+(tel ? '<a href="https://wa.me/'+tel+'" target="_blank" class="bg-zinc-700 px-3 py-1 rounded">WA CLIENTE</a>' : '')+'</div></div>';
+    });
+    document.getElementById('totalOrdenes').textContent = ordenes;
+    document.getElementById('totalPrendas').textContent = prendas;
+    document.getElementById('totalMonto').textContent = "$"+monto.toLocaleString('es-AR');
+    document.getElementById('cRemeras').textContent = cats.remeras;
+    document.getElementById('cGorras').textContent = cats.gorras;
+    document.getElementById('cZapas').textContent = cats.zapatillas;
+    document.getElementById('cBebidas').textContent = cats.bebidas;
+    document.getElementById('cBarriles').textContent = cats.barriles;
+    document.getElementById('listaPedidos').innerHTML = html || "Aun no hay pedidos.";
+    document.getElementById('ultimaAct').textContent = "Actualizado: " + new Date().toLocaleTimeString('es-AR');
+  });
+  window.eliminarPedido = async (id, num) => { if(!confirm("Eliminar pedido #"+num+"?")) return; try{ await deleteDoc(doc(db, "pedidos", id)); }catch(e){ alert(e.message); } };
+  window.editarPedido = (id) => {
+    let d = docsCache.find(x=>x.id===id); if(!d) return;
+    document.getElementById('editId').value = id;
+    document.getElementById('editNum').textContent = docsCache.length - docsCache.findIndex(x=>x.id===id);
+    document.getElementById('editEstampado').value = d.estampado||'';
+    document.getElementById('editCategoria').value = (d.categoria||'remeras').toLowerCase();
+    document.getElementById('editColor').value = d.color||'Negra';
+    document.getElementById('editTalle').value = d.talle||'L';
+    document.getElementById('editCantidad').value = d.cantidad||1;
+    document.getElementById('editMonto').value = d.montoTotal||0;
+    document.getElementById('editCliente').value = d.nombreCliente||d.cliente||'';
+    document.getElementById('editTelefono').value = d.telefonoCliente||'';
+    document.getElementById('modalEditar').classList.remove('hidden'); document.getElementById('modalEditar').classList.add('flex');
+  };
+  document.getElementById('btnGuardarEdit').onclick = async () => {
+    let id = document.getElementById('editId').value;
+    let cant = parseInt(document.getElementById('editCantidad').value)||1;
+    let monto = parseInt(document.getElementById('editMonto').value)||0;
+    try{
+      await updateDoc(doc(db, "pedidos", id), {
+        estampado: document.getElementById('editEstampado').value,
+        categoria: document.getElementById('editCategoria').value,
+        color: document.getElementById('editColor').value,
+        talle: document.getElementById('editTalle').value,
+        cantidad: cant,
+        montoTotal: monto,
+        nombreCliente: document.getElementById('editCliente').value,
+        telefonoCliente: document.getElementById('editTelefono').value,
+        editado: serverTimestamp()
+      });
+      document.getElementById('modalEditar').classList.add('hidden');
+    }catch(e){ alert(e.message); }
+  };
+  window.confirmarPedido = (id) => {
+    let d = docsCache.find(x=>x.id===id); if(!d) return;
+    let tel = d.telefonoCliente || d.clienteTelefono || d.wa || "";
+    if(!tel){ tel = prompt("Sin telefono. Ingresa numero cliente (549112...):"); if(!tel) return; }
+    let telClean = tel.replace(/[^0-9]/g,''); if(!telClean.startsWith('54')) telClean = '54'+telClean.replace(/^0/,'');
+    let num = docsCache.length - docsCache.findIndex(x=>x.id===id);
+    let mensaje = "Hola "+(d.nombreCliente||'')+"! \n\nSTONES JODA! ROCK te confirma tu pedido:\n🔥 #"+num+" - "+d.estampado+" - "+d.categoria+" "+d.color+" Talle "+d.talle+" x"+d.cantidad+"\n💰 Total: $"+(d.montoTotal||0).toLocaleString('es-AR')+"\n\nTu pedido ya esta en preparacion. Te enviamos seguimiento pronto.\nGracias!";
+    window.open("https://wa.me/"+telClean+"?text="+encodeURIComponent(mensaje), "_blank");
+  };
+</script>
+</body>
+</html>
 
